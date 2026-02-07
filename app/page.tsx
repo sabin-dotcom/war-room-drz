@@ -1262,9 +1262,12 @@ export default function WarRoom() {
               <div className="flex items-start gap-4">
                 <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center text-5xl border-2 border-white/20">👔</div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
+                  <div className="flex items-center gap-3 mb-1 flex-wrap">
                     <h3 className="font-bold text-2xl">Dr. Mohammed Fouad Zamakhshary</h3>
                     <span className="px-2 py-0.5 bg-red-500 text-xs rounded font-bold">CLASSIFIED</span>
+                    <a href="/dossier" className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-xs font-bold rounded text-white transition-colors">
+                      🔍 FULL VISUAL DOSSIER →
+                    </a>
                   </div>
                   <p className="text-white/70 text-sm">MD, MEd, FRCSC • Chairman & CEO, Advanced Health Solutions</p>
                   <div className="flex flex-wrap gap-2 mt-3">
