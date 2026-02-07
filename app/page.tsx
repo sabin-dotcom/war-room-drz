@@ -3,13 +3,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CONTRACT_TEXT, CONTRACT_ISSUES } from '../lib/contract';
+import { DRZ_PERSONA, NEGOTIATION_SCENARIOS } from '../lib/persona';
 import { useAuth } from './components/AuthProvider';
 
-type Tab = 'command' | 'psychology' | 'powermap' | 'intel' | 'stakeholders' | 'timeline' | 'risks' | 'contract' | 'strategy' | 'scenarios' | 'chat' | 'addcontext';
+type Tab = 'command' | 'psychology' | 'powermap' | 'intel' | 'stakeholders' | 'timeline' | 'risks' | 'contract' | 'strategy' | 'scenarios' | 'roleplay' | 'chat' | 'addcontext';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface RoleplayMessage {
+  role: 'user' | 'drz';
+  content: string;
+  timestamp?: string;
 }
 
 export default function WarRoom() {
@@ -23,6 +30,13 @@ export default function WarRoom() {
   const [intelText, setIntelText] = useState('');
   const [intelItems, setIntelItems] = useState<string[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  // Roleplay state
+  const [roleplayMessages, setRoleplayMessages] = useState<RoleplayMessage[]>([]);
+  const [roleplayInput, setRoleplayInput] = useState('');
+  const [roleplayLoading, setRoleplayLoading] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<number | null>(null);
+  const roleplayEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('warroom-intel');
@@ -69,6 +83,69 @@ export default function WarRoom() {
     setIntelText('');
   };
 
+  // Roleplay scroll effect
+  useEffect(() => {
+    roleplayEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [roleplayMessages]);
+
+  const sendRoleplayMessage = async () => {
+    if (!roleplayInput.trim() || roleplayLoading) return;
+    const userMessage = roleplayInput.trim();
+    setRoleplayInput('');
+    
+    const newUserMsg: RoleplayMessage = { 
+      role: 'user', 
+      content: userMessage,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    };
+    setRoleplayMessages(prev => [...prev, newUserMsg]);
+    setRoleplayLoading(true);
+
+    try {
+      // Format messages for API
+      const apiMessages = [...roleplayMessages, newUserMsg].map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content
+      }));
+
+      const res = await fetch('/api/roleplay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages: apiMessages,
+          userContext: intelItems.join('\n\n')
+        })
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        setRoleplayMessages(prev => [...prev, { 
+          role: 'drz', 
+          content: `[Error: ${data.error}]`,
+          timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        }]);
+      } else {
+        setRoleplayMessages(prev => [...prev, { 
+          role: 'drz', 
+          content: data.reply,
+          timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        }]);
+      }
+    } catch {
+      setRoleplayMessages(prev => [...prev, { 
+        role: 'drz', 
+        content: '[Connection error. Try again.]',
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      }]);
+    }
+    setRoleplayLoading(false);
+  };
+
+  const startScenario = (scenarioId: number) => {
+    setSelectedScenario(scenarioId);
+    setRoleplayMessages([]);
+  };
+
   const tabs: { id: Tab; label: string }[] = [
     { id: 'command', label: '🎯 Command Center' },
     { id: 'psychology', label: '🧠 Psychology' },
@@ -80,6 +157,7 @@ export default function WarRoom() {
     { id: 'contract', label: '📜 Contract' },
     { id: 'strategy', label: '♟️ Strategy' },
     { id: 'scenarios', label: '🎲 Scenarios' },
+    { id: 'roleplay', label: '🎭 Roleplay DRZ' },
     { id: 'chat', label: '💬 AI Analyst' },
     { id: 'addcontext', label: '➕ Add Intel' },
   ];
@@ -1150,6 +1228,246 @@ export default function WarRoom() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ROLEPLAY TAB */}
+        {activeTab === 'roleplay' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="serif-font text-2xl text-stone-900">🎭 Negotiation Roleplay Simulator</h2>
+                <p className="text-stone-500 text-sm">Practice negotiating with a synthetic DRZ persona based on deep research</p>
+              </div>
+              {selectedScenario !== null && (
+                <button 
+                  onClick={() => { setSelectedScenario(null); setRoleplayMessages([]); }}
+                  className="px-4 py-2 text-sm bg-stone-100 hover:bg-stone-200 rounded-lg"
+                >
+                  ← Back to Scenarios
+                </button>
+              )}
+            </div>
+
+            {/* DRZ Persona Summary */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-[24px] p-6 text-white">
+              <div className="flex items-start gap-4">
+                <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-4xl">👔</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-xl">Dr. Mohammed Zamakhshary (DRZ)</h3>
+                  <p className="text-white/80 text-sm mt-1">Chairman & CEO, Advanced Health Solutions • Former Deputy Minister of Health</p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="px-2 py-1 bg-white/20 rounded-full text-xs">🎓 U of Toronto, Hospital for Sick Children</span>
+                    <span className="px-2 py-1 bg-white/20 rounded-full text-xs">🇪🇬 Half Egyptian (mother)</span>
+                    <span className="px-2 py-1 bg-white/20 rounded-full text-xs">🏛️ Diplomatic Quarter, Riyadh</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-white/60">Negotiation Style</div>
+                  <div className="text-lg font-bold">Risk-Averse</div>
+                  <div className="text-xs text-white/60 mt-1">Hedges bets, delays commitments</div>
+                </div>
+              </div>
+            </div>
+
+            {selectedScenario === null ? (
+              <>
+                {/* Pre-Simulated Scenarios */}
+                <div>
+                  <h3 className="font-bold text-stone-900 mb-4">📜 10 Pre-Simulated Negotiation Scenarios</h3>
+                  <p className="text-stone-500 text-sm mb-4">Review these scenarios to understand possible negotiation paths and outcomes</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {NEGOTIATION_SCENARIOS.map((scenario) => (
+                      <div key={scenario.id} className="bg-white rounded-[20px] p-5 border border-stone-200 hover:border-purple-300 transition-colors cursor-pointer" onClick={() => startScenario(scenario.id)}>
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold text-stone-900">#{scenario.id}. {scenario.title}</h4>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            scenario.difficulty === 'very_hard' ? 'bg-red-100 text-red-700' :
+                            scenario.difficulty === 'hard' ? 'bg-orange-100 text-orange-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>{scenario.difficulty.replace('_', ' ').toUpperCase()}</span>
+                        </div>
+                        <p className="text-sm text-stone-600 mb-3">{scenario.description}</p>
+                        <div className="text-xs text-purple-600 font-medium">Click to view full conversation →</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Live Chat Section */}
+                <div className="bg-white rounded-[24px] p-6 border border-stone-200">
+                  <h3 className="font-bold text-stone-900 mb-4">💬 Live Negotiation Practice</h3>
+                  <p className="text-stone-500 text-sm mb-4">Start a live conversation with the DRZ persona. Practice your negotiation tactics in real-time.</p>
+                  
+                  <div className="h-80 overflow-y-auto smooth-scroll space-y-3 bg-stone-50 rounded-[16px] p-4 mb-4">
+                    {roleplayMessages.length === 0 && (
+                      <div className="text-center py-8 text-stone-400">
+                        <div className="text-4xl mb-3">🎭</div>
+                        <p className="mb-2">Start negotiating with DRZ</p>
+                        <div className="flex flex-wrap justify-center gap-2 mt-4">
+                          {['Mohammed, we need to discuss the budget.', 'I\'ve reviewed the contract - we have concerns.', 'What\'s happening with the Egyptian deal?'].map((q, i) => (
+                            <button key={i} onClick={() => setRoleplayInput(q)} className="text-xs bg-white px-3 py-1.5 rounded-full border border-stone-200 hover:border-stone-400">
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {roleplayMessages.map((msg, i) => (
+                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`p-3 rounded-2xl max-w-[80%] ${
+                          msg.role === 'user' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-white text-stone-800 border border-stone-200'
+                        }`}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs opacity-70">{msg.role === 'user' ? 'You (Sabin)' : 'Dr. Zamakhshary'}</span>
+                            {msg.timestamp && <span className="text-xs opacity-50">{msg.timestamp}</span>}
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {roleplayLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-white text-stone-800 border border-stone-200 p-3 rounded-2xl">
+                          <div className="text-xs opacity-70 mb-1">Dr. Zamakhshary is typing...</div>
+                          <div className="flex gap-1">
+                            <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" />
+                            <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}} />
+                            <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={roleplayEndRef} />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={roleplayInput}
+                      onChange={(e) => setRoleplayInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendRoleplayMessage()}
+                      placeholder="Type your message to Dr. Zamakhshary..."
+                      className="flex-1 px-4 py-3 rounded-full bg-white border border-stone-200 focus:ring-2 focus:ring-purple-300 text-sm"
+                    />
+                    <button
+                      onClick={sendRoleplayMessage}
+                      disabled={roleplayLoading}
+                      className="px-6 py-3 rounded-full bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Scenario Detail View */
+              <div className="bg-white rounded-[24px] p-6 border border-stone-200">
+                {NEGOTIATION_SCENARIOS.filter(s => s.id === selectedScenario).map(scenario => (
+                  <div key={scenario.id}>
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-xl text-stone-900">{scenario.title}</h3>
+                        <p className="text-stone-500 text-sm mt-1">{scenario.description}</p>
+                      </div>
+                      <span className={`text-xs px-3 py-1.5 rounded-full ${
+                        scenario.difficulty === 'very_hard' ? 'bg-red-100 text-red-700' :
+                        scenario.difficulty === 'hard' ? 'bg-orange-100 text-orange-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>{scenario.difficulty.replace('_', ' ').toUpperCase()}</span>
+                    </div>
+                    
+                    <div className="p-4 bg-blue-50 rounded-xl mb-6">
+                      <div className="text-xs font-medium text-blue-800 mb-1">LIKELY OUTCOME</div>
+                      <p className="text-sm text-stone-700">{scenario.likelyOutcome}</p>
+                    </div>
+                    
+                    {/* Simulated Conversation */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-stone-800">Conversation Flow</h4>
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto smooth-scroll bg-stone-50 rounded-xl p-4">
+                        {scenario.turns.map((turn, i) => {
+                          if (turn.role === 'context') {
+                            return (
+                              <div key={i} className="text-center text-xs text-stone-500 py-2">
+                                {turn.text}
+                              </div>
+                            );
+                          }
+                          if (turn.role === 'analysis') {
+                            return (
+                              <div key={i} className="p-4 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl border border-purple-200">
+                                <div className="text-xs font-bold text-purple-800 mb-1">📊 ANALYSIS</div>
+                                <p className="text-sm text-stone-700">{turn.text}</p>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={i} className={`flex ${turn.role === 'sabin' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`p-3 rounded-2xl max-w-[80%] ${
+                                turn.role === 'sabin' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : turn.role === 'drz'
+                                  ? 'bg-white text-stone-800 border border-stone-200'
+                                  : 'bg-stone-200 text-stone-600'
+                              }`}>
+                                <div className="text-xs opacity-70 mb-1">
+                                  {turn.role === 'sabin' ? '👤 You (Sabin)' : turn.role === 'drz' ? '👔 Dr. Zamakhshary' : turn.role === 'amr' ? '⚖️ Amr (Lawyer)' : ''}
+                                </div>
+                                <p className="text-sm whitespace-pre-wrap">{turn.text}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    
+                    {/* Practice This Scenario */}
+                    <div className="mt-6 p-4 bg-purple-50 rounded-xl">
+                      <h4 className="font-semibold text-purple-900 mb-2">🎯 Practice This Scenario</h4>
+                      <p className="text-sm text-stone-600 mb-3">Try this scenario yourself with the live DRZ persona. Start with the opening message above.</p>
+                      <button 
+                        onClick={() => {
+                          setRoleplayMessages([{ role: 'user', content: scenario.openingMessage, timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) }]);
+                          setSelectedScenario(null);
+                          // Trigger DRZ response
+                          setTimeout(() => {
+                            setRoleplayLoading(true);
+                            fetch('/api/roleplay', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ 
+                                messages: [{ role: 'user', content: scenario.openingMessage }],
+                                userContext: ''
+                              })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                              setRoleplayMessages(prev => [...prev, { 
+                                role: 'drz', 
+                                content: data.reply || '[Error]',
+                                timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                              }]);
+                              setRoleplayLoading(false);
+                            })
+                            .catch(() => {
+                              setRoleplayMessages(prev => [...prev, { role: 'drz', content: '[Connection error]' }]);
+                              setRoleplayLoading(false);
+                            });
+                          }, 100);
+                        }}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700"
+                      >
+                        Practice Live →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
