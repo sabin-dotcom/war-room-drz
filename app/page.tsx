@@ -37,6 +37,8 @@ export default function WarRoom() {
   const [roleplayInput, setRoleplayInput] = useState('');
   const [roleplayLoading, setRoleplayLoading] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<number | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const roleplayEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -114,10 +116,15 @@ export default function WarRoom() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: apiMessages,
-          userContext: intelItems.join('\n\n')
+          userContext: intelItems.join('\n\n'),
+          debug: showDebug
         })
       });
       const data = await res.json();
+      
+      if (data.debug) {
+        setDebugInfo(data.debug);
+      }
       
       if (data.error) {
         setRoleplayMessages(prev => [...prev, { 
@@ -1531,8 +1538,36 @@ export default function WarRoom() {
 
                 {/* Live Chat Section */}
                 <div className="bg-white rounded-[24px] p-6 border border-stone-200">
-                  <h3 className="font-bold text-stone-900 mb-4">💬 Live Negotiation Practice</h3>
-                  <p className="text-stone-500 text-sm mb-4">Start a live conversation with the DRZ persona. Practice your negotiation tactics in real-time.</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-bold text-stone-900">💬 Live Negotiation Practice</h3>
+                      <p className="text-stone-500 text-sm">Practice with the DRZ persona. AI uses full intelligence dossier.</p>
+                    </div>
+                    <button 
+                      onClick={() => setShowDebug(!showDebug)}
+                      className={`px-3 py-1.5 text-xs rounded-lg border ${showDebug ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-stone-100 border-stone-200 text-stone-600'}`}
+                    >
+                      {showDebug ? '🔍 Debug ON' : '🔍 Debug'}
+                    </button>
+                  </div>
+                  
+                  {/* Debug Info Panel */}
+                  {showDebug && debugInfo && (
+                    <div className="mb-4 p-4 bg-slate-900 text-green-400 rounded-xl font-mono text-xs overflow-auto max-h-48">
+                      <div className="text-slate-400 mb-2">// System Prompt Stats</div>
+                      <div>Model: {debugInfo.model}</div>
+                      <div>System Prompt Length: {debugInfo.systemPromptLength?.toLocaleString()} chars</div>
+                      <div>Message Count: {debugInfo.messageCount}</div>
+                      <div className="text-slate-400 mt-2">// Prompt Preview:</div>
+                      <div className="text-green-300 whitespace-pre-wrap">{debugInfo.systemPromptPreview}</div>
+                    </div>
+                  )}
+                  
+                  {showDebug && !debugInfo && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+                      ⚠️ Debug mode enabled. Send a message to see what context the AI receives.
+                    </div>
+                  )}
                   
                   <div className="h-80 overflow-y-auto smooth-scroll space-y-3 bg-stone-50 rounded-[16px] p-4 mb-4">
                     {roleplayMessages.length === 0 && (
