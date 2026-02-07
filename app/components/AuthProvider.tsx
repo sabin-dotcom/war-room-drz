@@ -4,10 +4,13 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { createClient } from '@supabase/supabase-js';
 import type { User, Session } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create supabase client only if credentials are available
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 interface AuthContextType {
   user: User | null;
@@ -25,7 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // If Supabase isn't configured, skip auth (dev mode)
+  const authDisabled = !supabase;
+
   useEffect(() => {
+    if (authDisabled) {
+      // Create mock user for dev mode
+      setUser({ id: 'dev-user', email: 'dev@localhost' } as User);
+      setLoading(false);
+      return;
+    }
+
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -41,9 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [authDisabled]);
 
   const signUp = async (email: string, password: string, name: string) => {
+    if (!supabase) return { error: { message: 'Auth not configured' } };
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -55,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) return { error: { message: 'Auth not configured' } };
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -63,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
   };
 
