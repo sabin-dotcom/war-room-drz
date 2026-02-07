@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CONTRACT_TEXT, CONTRACT_ISSUES } from '../lib/contract';
+import { useAuth } from './components/AuthProvider';
 
 type Tab = 'overview' | 'dealmap' | 'stakeholders' | 'scope' | 'timeline' | 'risks' | 'contract' | 'strategy' | 'chat' | 'intel';
 
@@ -11,7 +13,10 @@ interface Message {
 }
 
 export default function WarRoom() {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -77,6 +82,35 @@ export default function WarRoom() {
     { id: 'intel', label: '➕ Add Intel' },
   ];
 
+  // Auth check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAF9F6' }}>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-stone-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!user) {
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
   return (
     <div className="min-h-screen relative">
       <div className="fixed top-0 left-0 w-full h-96 dot-pattern pointer-events-none z-0" />
@@ -90,9 +124,47 @@ export default function WarRoom() {
             <p className="text-stone-500 text-xs">DRZ Deal — Zamakhshary / Saudi Arabia</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <span className="text-xs font-medium text-amber-700">Negotiation Phase</span>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-xs font-medium text-amber-700">Negotiation Phase</span>
+          </div>
+          
+          {/* User Menu */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-stone-200 hover:border-stone-300 transition-colors"
+            >
+              <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                <span className="text-xs font-medium text-purple-600">
+                  {user.email?.[0].toUpperCase()}
+                </span>
+              </div>
+              <span className="text-sm text-stone-600 max-w-[120px] truncate hidden sm:block">
+                {user.user_metadata?.name || user.email}
+              </span>
+              <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-stone-200 py-1 z-50">
+                <div className="px-4 py-2 border-b border-stone-100">
+                  <p className="text-sm font-medium text-stone-900 truncate">{user.user_metadata?.name || 'User'}</p>
+                  <p className="text-xs text-stone-500 truncate">{user.email}</p>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 

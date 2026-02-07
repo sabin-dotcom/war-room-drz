@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { AuthProvider } from './components/AuthProvider'
 import AIChatWidget from './components/AIChatWidget'
 
 export const metadata: Metadata = {
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-cream min-h-screen">
-        {children}
-        <AIChatWidget />
+        <AuthProvider>
+          {children}
+          <AIChatWidget />
+        </AuthProvider>
       </body>
     </html>
   )

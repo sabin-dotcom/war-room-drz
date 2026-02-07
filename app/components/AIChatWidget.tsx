@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useAuth } from './AuthProvider';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -8,7 +9,11 @@ interface Message {
 }
 
 export default function AIChatWidget() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Don't show widget if not authenticated
+  if (!user) return null;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
