@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CONTRACT_TEXT, CONTRACT_ISSUES } from '../lib/contract';
 import { DRZ_PERSONA, NEGOTIATION_SCENARIOS } from '../lib/persona';
+import { INTELLIGENCE_DOSSIER, getConfidenceColor, getConfidenceLabel } from '../lib/intelligence-dossier';
 import { useAuth } from './components/AuthProvider';
 
 type Tab = 'command' | 'psychology' | 'powermap' | 'intel' | 'stakeholders' | 'timeline' | 'risks' | 'contract' | 'strategy' | 'scenarios' | 'roleplay' | 'chat' | 'addcontext';
@@ -1249,24 +1250,257 @@ export default function WarRoom() {
               )}
             </div>
 
-            {/* DRZ Persona Summary */}
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-[24px] p-6 text-white">
+            {/* Intelligence Dossier Header */}
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-[24px] p-6 text-white">
               <div className="flex items-start gap-4">
-                <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-4xl">👔</div>
+                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center text-5xl border-2 border-white/20">👔</div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-xl">Dr. Mohammed Zamakhshary (DRZ)</h3>
-                  <p className="text-white/80 text-sm mt-1">Chairman & CEO, Advanced Health Solutions • Former Deputy Minister of Health</p>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="font-bold text-2xl">Dr. Mohammed Fouad Zamakhshary</h3>
+                    <span className="px-2 py-0.5 bg-red-500 text-xs rounded font-bold">CLASSIFIED</span>
+                  </div>
+                  <p className="text-white/70 text-sm">MD, MEd, FRCSC • Chairman & CEO, Advanced Health Solutions</p>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="px-2 py-1 bg-white/20 rounded-full text-xs">🎓 U of Toronto, Hospital for Sick Children</span>
-                    <span className="px-2 py-1 bg-white/20 rounded-full text-xs">🇪🇬 Half Egyptian (mother)</span>
-                    <span className="px-2 py-1 bg-white/20 rounded-full text-xs">🏛️ Diplomatic Quarter, Riyadh</span>
+                    <span className="px-2 py-1 bg-green-500/30 border border-green-400/50 rounded text-xs">✓ VERIFIED IDENTITY</span>
+                    <span className="px-2 py-1 bg-white/10 rounded text-xs">🎓 U of Toronto, Sick Kids</span>
+                    <span className="px-2 py-1 bg-white/10 rounded text-xs">🇪🇬 Saudi-Egyptian</span>
+                    <span className="px-2 py-1 bg-white/10 rounded text-xs">📍 Diplomatic Quarter</span>
+                    <span className="px-2 py-1 bg-white/10 rounded text-xs">📚 7,433 Citations</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs text-white/60">Negotiation Style</div>
-                  <div className="text-lg font-bold">Risk-Averse</div>
-                  <div className="text-xs text-white/60 mt-1">Hedges bets, delays commitments</div>
+                <div className="text-right bg-white/10 rounded-xl p-3">
+                  <div className="text-xs text-white/60">Trust Score</div>
+                  <div className="text-3xl font-bold text-amber-400">3/10</div>
+                  <div className="text-xs text-white/60 mt-1">PROCEED WITH CAUTION</div>
                 </div>
+              </div>
+            </div>
+
+            {/* Key Intelligence Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl p-4 border border-stone-200">
+                <div className="text-xs text-stone-500">Est. Net Worth</div>
+                <div className="text-xl font-bold text-stone-800">$5M-$20M</div>
+                <div className="text-xs text-amber-600">⚠️ ESTIMATED</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-stone-200">
+                <div className="text-xs text-stone-500">Age (estimated)</div>
+                <div className="text-xl font-bold text-stone-800">55-62</div>
+                <div className="text-xs text-amber-600">⚠️ INFERRED</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-stone-200">
+                <div className="text-xs text-stone-500">MBTI Estimate</div>
+                <div className="text-xl font-bold text-stone-800">INTJ/ENTJ</div>
+                <div className="text-xs text-orange-600">🔶 SPECULATION</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-stone-200">
+                <div className="text-xs text-stone-500">Risk Profile</div>
+                <div className="text-xl font-bold text-red-600">RISK-AVERSE</div>
+                <div className="text-xs text-green-600">✓ OBSERVED</div>
+              </div>
+            </div>
+
+            {/* Expandable Dossier Sections */}
+            <div className="bg-white rounded-[24px] p-6 border border-stone-200">
+              <h3 className="font-bold text-stone-900 mb-4 flex items-center gap-2">
+                📋 Intelligence Dossier <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">87 Data Points</span>
+              </h3>
+              
+              <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                {/* Financial Profile */}
+                <details className="bg-stone-50 rounded-xl p-4">
+                  <summary className="font-semibold text-stone-800 cursor-pointer">💰 Financial Profile (Estimated)</summary>
+                  <div className="mt-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white rounded-lg p-3">
+                        <div className="text-xs text-stone-500">Net Worth Range</div>
+                        <div className="font-bold text-stone-800">$5M - $20M USD</div>
+                        <div className="text-xs text-amber-600">Confidence: 2/5</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3">
+                        <div className="text-xs text-stone-500">Primary Residence</div>
+                        <div className="font-bold text-stone-800">$1M - $2.5M</div>
+                        <div className="text-xs text-amber-600">Diplomatic Quarter villa</div>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-stone-500 mb-2">Estimated Income Streams</div>
+                      <ul className="text-sm text-stone-700 space-y-1">
+                        <li>• AHS CEO compensation: $300K-600K/year</li>
+                        <li>• Board memberships: $50K-200K/year</li>
+                        <li>• Government consulting: $100K-300K/year</li>
+                        <li>• Investment returns: Variable</li>
+                      </ul>
+                    </div>
+                  </div>
+                </details>
+
+                {/* Education & Credentials */}
+                <details className="bg-stone-50 rounded-xl p-4">
+                  <summary className="font-semibold text-stone-800 cursor-pointer">🎓 Education & Credentials (Verified)</summary>
+                  <div className="mt-4 space-y-2">
+                    {[
+                      { item: "Pediatric Surgery Fellowship - University of Toronto, Hospital for Sick Children", confidence: 5 },
+                      { item: "General Surgery Residency - Dalhousie University, Canada", confidence: 5 },
+                      { item: "FRCSC - Fellow of Royal College of Surgeons of Canada", confidence: 5 },
+                      { item: "MEd - Master of Education", confidence: 5 },
+                      { item: "ORCID: 0000-0001-8870-8684", confidence: 5 },
+                      { item: "7,433+ academic citations", confidence: 5 },
+                      { item: "18+ peer-reviewed publications", confidence: 5 },
+                    ].map((edu, i) => (
+                      <div key={i} className="flex items-center justify-between bg-white rounded-lg p-2">
+                        <span className="text-sm text-stone-700">{edu.item}</span>
+                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">✓ VERIFIED</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+
+                {/* Career History */}
+                <details className="bg-stone-50 rounded-xl p-4">
+                  <summary className="font-semibold text-stone-800 cursor-pointer">💼 Career History</summary>
+                  <div className="mt-4 space-y-2">
+                    {[
+                      { role: "Chairman & CEO, Advanced Health Solutions (AHS)", status: "Current", confidence: 5 },
+                      { role: "Deputy Minister of Health, Saudi Arabia", status: "Previous", confidence: 4 },
+                      { role: "Pediatric Surgeon, King Abdulaziz Medical City", status: "Previous", confidence: 5 },
+                      { role: "Faculty, King Saud bin Abdulaziz University", status: "Previous", confidence: 5 },
+                      { role: "Pediatric Surgeon, Hospital for Sick Children, Toronto", status: "Training", confidence: 5 },
+                    ].map((job, i) => (
+                      <div key={i} className="flex items-center justify-between bg-white rounded-lg p-3">
+                        <div>
+                          <div className="text-sm font-medium text-stone-800">{job.role}</div>
+                          <div className="text-xs text-stone-500">{job.status}</div>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded ${job.confidence === 5 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {job.confidence === 5 ? '✓ VERIFIED' : 'HIGH CONF'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+
+                {/* Psychological Profile */}
+                <details className="bg-stone-50 rounded-xl p-4">
+                  <summary className="font-semibold text-stone-800 cursor-pointer">🧠 Psychological Profile</summary>
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-5 gap-2">
+                      {[
+                        { trait: "Openness", level: "High", pct: 75 },
+                        { trait: "Conscientiousness", level: "V.High", pct: 90 },
+                        { trait: "Extraversion", level: "Mod-High", pct: 65 },
+                        { trait: "Agreeableness", level: "Moderate", pct: 50 },
+                        { trait: "Neuroticism", level: "Low", pct: 25 },
+                      ].map((t, i) => (
+                        <div key={i} className="bg-white rounded-lg p-2 text-center">
+                          <div className="text-xs text-stone-500">{t.trait}</div>
+                          <div className="text-sm font-bold text-stone-800">{t.level}</div>
+                          <div className="h-2 bg-stone-200 rounded-full mt-1">
+                            <div className="h-full bg-purple-500 rounded-full" style={{width: `${t.pct}%`}} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-stone-500 mb-2">Core Motivations</div>
+                      <div className="flex flex-wrap gap-2">
+                        {["Legacy building", "Power & influence", "Financial security", "Recognition", "Control"].map((m, i) => (
+                          <span key={i} className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded">{m}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-stone-500 mb-2">Key Fears</div>
+                      <div className="flex flex-wrap gap-2">
+                        {["Bad deals", "Reputation damage", "Loss of control", "Partner dependency", "Being locked in"].map((f, i) => (
+                          <span key={i} className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded">{f}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                {/* Network & Connections */}
+                <details className="bg-stone-50 rounded-xl p-4">
+                  <summary className="font-semibold text-stone-800 cursor-pointer">🕸️ Network & Connections</summary>
+                  <div className="mt-4 space-y-3">
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-stone-500 mb-2">Political Connections</div>
+                      {[
+                        { name: "Dr. OZ", rel: "Trump administration contact", strength: "Medium" },
+                        { name: "Engineer Majid", rel: "NCOSH leadership", strength: "Strong" },
+                        { name: "Ministry of Health officials", rel: "Former colleagues", strength: "Strong" },
+                      ].map((c, i) => (
+                        <div key={i} className="flex items-center justify-between py-1 border-b border-stone-100 last:border-0">
+                          <span className="text-sm text-stone-700">{c.name}</span>
+                          <span className="text-xs text-stone-500">{c.rel}</span>
+                          <span className={`text-xs ${c.strength === 'Strong' ? 'text-green-600' : 'text-amber-600'}`}>{c.strength}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-stone-500 mb-2">Business Partnerships</div>
+                      {[
+                        { name: "Egyptian Healthcare Authority", status: "Active", verified: true },
+                        { name: "Johns Hopkins (accreditation)", status: "Active", verified: true },
+                        { name: "Humans.ai", status: "Negotiating", verified: true },
+                        { name: "Egyptian AI company", status: "Parallel deal", verified: true },
+                        { name: "Răzvan Costin", status: "Legacy/problematic", verified: true },
+                      ].map((p, i) => (
+                        <div key={i} className="flex items-center justify-between py-1 border-b border-stone-100 last:border-0">
+                          <span className="text-sm text-stone-700">{p.name}</span>
+                          <span className="text-xs text-stone-500">{p.status}</span>
+                          {p.verified && <span className="text-xs text-green-600">✓</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </details>
+
+                {/* Red Flags */}
+                <details className="bg-red-50 rounded-xl p-4" open>
+                  <summary className="font-semibold text-red-800 cursor-pointer">🚨 Red Flags & Trust Analysis</summary>
+                  <div className="mt-4 space-y-2">
+                    {[
+                      { flag: "Contacted Răzvan behind Sabin's back", severity: "HIGH" },
+                      { flag: "Signed with Egyptians while negotiating", severity: "HIGH" },
+                      { flag: "Refuses to commit budget (defers to 'board')", severity: "CRITICAL" },
+                      { flag: "Lawyers removing debt acknowledgment", severity: "HIGH" },
+                      { flag: "Personal warmth ≠ business commitment", severity: "MEDIUM" },
+                    ].map((rf, i) => (
+                      <div key={i} className="flex items-center justify-between bg-white rounded-lg p-2">
+                        <span className="text-sm text-stone-700">{rf.flag}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded font-bold ${
+                          rf.severity === 'CRITICAL' ? 'bg-red-200 text-red-800' :
+                          rf.severity === 'HIGH' ? 'bg-orange-200 text-orange-800' :
+                          'bg-amber-200 text-amber-800'
+                        }`}>{rf.severity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+
+                {/* Behavioral Predictions */}
+                <details className="bg-blue-50 rounded-xl p-4">
+                  <summary className="font-semibold text-blue-800 cursor-pointer">🔮 Behavioral Predictions</summary>
+                  <div className="mt-4 space-y-3">
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-blue-600 font-medium mb-2">IF YOU PUSH HARD:</div>
+                      <p className="text-sm text-stone-700">Will go silent for 1-2 weeks, then return with counter-offer</p>
+                      <div className="text-xs text-stone-500 mt-1">Probability: 70%</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-blue-600 font-medium mb-2">IF YOU WALK AWAY:</div>
+                      <p className="text-sm text-stone-700">Will try to re-engage within 1-3 months with better terms</p>
+                      <div className="text-xs text-stone-500 mt-1">Probability: 60%</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="text-xs text-blue-600 font-medium mb-2">IF YOU ACCEPT CURRENT TERMS:</div>
+                      <p className="text-sm text-stone-700">Will sign quickly, then delay budget in 'board meetings'</p>
+                      <div className="text-xs text-stone-500 mt-1">Probability: 80%</div>
+                    </div>
+                  </div>
+                </details>
               </div>
             </div>
 

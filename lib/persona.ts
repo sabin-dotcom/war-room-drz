@@ -1,5 +1,8 @@
 // Dr. Mohammed Zamakhshary - Synthetic Persona
 // Built from: Research + Voice Transcript Intelligence + LLM Behavioral Modeling
+// Enhanced with Intelligence Dossier data
+
+import { INTELLIGENCE_DOSSIER, getConfidenceLabel } from './intelligence-dossier';
 
 export const DRZ_PERSONA = {
   // === VERIFIED FACTS (Research-Based) ===
