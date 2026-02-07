@@ -176,7 +176,7 @@ Now respond as Dr. Zamakhshary. Keep responses conversational (like WhatsApp/cal
       }))
     ];
 
-    // Use Claude 3.5 Sonnet for high-quality persona simulation
+    // Use Claude Opus 4 for maximum quality persona simulation
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -186,10 +186,10 @@ Now respond as Dr. Zamakhshary. Keep responses conversational (like WhatsApp/cal
         'X-Title': 'War Room - DRZ Roleplay'
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
+        model: 'anthropic/claude-opus-4',
         messages: formattedMessages,
-        max_tokens: 600,
-        temperature: 0.75, // Balanced for realistic conversation
+        max_tokens: 800,
+        temperature: 0.7,
       })
     });
 
@@ -209,7 +209,7 @@ Now respond as Dr. Zamakhshary. Keep responses conversational (like WhatsApp/cal
         debug: {
           systemPromptLength: fullSystemPrompt.length,
           systemPromptPreview: fullSystemPrompt.substring(0, 500) + '...',
-          model: 'anthropic/claude-3.5-sonnet',
+          model: 'anthropic/claude-opus-4',
           messageCount: formattedMessages.length
         }
       });
