@@ -40,13 +40,16 @@ export default function WarRoom() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          message: userMessage, 
-          history: messages,
-          context: intelItems.join('\n\n')
+          question: userMessage, 
+          userIntel: intelItems.join('\n\n')
         })
       });
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      if (data.error) {
+        setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
+      }
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error getting response.' }]);
     }
